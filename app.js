@@ -1,122 +1,23 @@
 require("dotenv").config();
 require("./config/database").connect();
 const express = require("express");
-const bcrypt = require("bcryptjs");
-const crypto = require("crypto");
-const jwt = require("jsonwebtoken");
 
-const User = require("./model/user");
 const auth = require("./middleware/auth");
+const {
+  loginUser,
+  registerUser,
+  resetPassword,
+} = require("./controllers/auth-controller");
 
 const app = express();
 
 app.use(express.json({ limit: "50mb" }));
 
-app.post("/register", async (req, res) => {
-  try {
-    // Get user input
-    const { first_name, last_name, email, password } = req.body;
+app.post("/register", registerUser);
 
-    // Validate user input
-    if (!(email && password && first_name && last_name)) {
-      res.status(400).send("All input is required");
-    }
+app.post("/login", loginUser);
 
-    // check if user already exist
-    // Validate if user exist in our database
-    const oldUser = await User.findOne({ email });
-
-    if (oldUser) {
-      return res.status(409).send("User Already Exist. Please Login");
-    }
-
-    //Encrypt user password
-    const encryptedPassword = await bcrypt.hash(password, 10);
-
-    // Create user in our database
-    const user = await User.create({
-      first_name,
-      last_name,
-      email: email.toLowerCase(), // sanitize: convert email to lowercase
-      password: encryptedPassword,
-    });
-
-    // Create token
-    const token = jwt.sign(
-      { user_id: user._id, email },
-      process.env.TOKEN_KEY,
-      {
-        expiresIn: "2h",
-      }
-    );
-    // save user token
-    user.token = token;
-
-    // return new user
-    res.status(201).json(user);
-  } catch (err) {
-    console.log(err);
-  }
-});
-
-app.post("/login", async (req, res) => {
-  try {
-    // Get user input
-    const { email, password } = req.body;
-
-    // Validate user input
-    if (!(email && password)) {
-      res.status(400).send("All input is required");
-    }
-    // Validate if user exist in our database
-    const user = await User.findOne({ email });
-
-    if (user && (await bcrypt.compare(password, user.password))) {
-      // Create token
-      const token = jwt.sign(
-        { user_id: user._id, email },
-        process.env.TOKEN_KEY,
-        {
-          expiresIn: "2h",
-        }
-      );
-
-      // save user token
-      user.token = token;
-
-      // user
-      res.status(200).json(user);
-    }
-    res.status(400).send("Invalid Credentials");
-  } catch (err) {
-    console.log(err);
-  }
-});
-
-app.post("/resetpass", async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    const resetToken = crypto.randomBytes(6).toString("hex");
-    const encryptedPassword = await bcrypt.hash(resetToken, 10);
-
-    user.password = encryptedPassword;
-
-    await user.save();
-
-    res
-      .status(200)
-      .json({ message: "Password Reset Successfull", newPassword: resetToken });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
+app.post("/resetpass", resetPassword);
 
 app.get("/welcome", auth, (req, res) => {
   res.status(200).send("Welcome 🙌 ");
