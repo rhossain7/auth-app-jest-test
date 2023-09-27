@@ -2,6 +2,7 @@ const User = require("../model/user");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const { createUser } = require("../services/auth-service");
 
 async function registerUser(req, res) {
   try {
@@ -31,7 +32,7 @@ async function registerUser(req, res) {
     });
 
     user.token = token;
-    await User.create(user);
+    await createUser();
 
     return res.status(201).json(user);
   } catch (err) {
