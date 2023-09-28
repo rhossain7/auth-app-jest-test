@@ -20,23 +20,21 @@ async function registerUser(req, res) {
 
     const encryptedPassword = await bcrypt.hash(password, 10);
 
+    const token = jwt.sign({ email }, process.env.TOKEN_KEY, {
+      expiresIn: "2h",
+    });
+
     const user = await User.create({
       first_name,
       last_name,
       email: email.toLowerCase(),
       password: encryptedPassword,
+      token,
     });
-
-    const token = jwt.sign({ email }, process.env.TOKEN_KEY, {
-      expiresIn: "2h",
-    });
-
-    user.token = token;
-    await createUser();
 
     return res.status(201).json(user);
   } catch (err) {
-    console.error(err);
+    console.error("error", err);
     return res.status(500).send("Internal Server Error");
   }
 }
@@ -46,7 +44,7 @@ async function loginUser(req, res) {
     const { email, password } = req.body;
 
     if (!(email && password)) {
-      res.status(400).send("All input is required");
+      return res.status(400).send("All input is required");
     }
     const user = await User.findOne({ email });
 
@@ -60,10 +58,11 @@ async function loginUser(req, res) {
       );
 
       user.token = token;
-      res.status(200).json(user);
+      return res.status(200).json(user);
     }
-    res.status(400).send("Invalid Credentials");
+    return res.status(400).send("Invalid Credentials");
   } catch (err) {
+    console.log("login error ");
     console.log(err);
   }
 }

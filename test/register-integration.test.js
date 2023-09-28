@@ -5,7 +5,7 @@ const User = require("../model/user");
 const bcrypt = require("bcryptjs");
 
 const { createUser } = require("../services/auth-service");
-const { registerUser } = require("../controllers/auth-controller");
+const authController = require("../controllers/auth-controller");
 
 const generateRandomUser = () => {
   const randomString = Math.random().toString(36).substring(7);
@@ -17,97 +17,102 @@ const generateRandomUser = () => {
   };
 };
 
-describe("Registration and Login API", () => {
+describe("Registration Function from Controller", () => {
   let testUser;
   let db;
+  let req, res;
 
   beforeAll(async () => {
     db = await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
+
+    req = {
+      body: {
+        first_name: "John",
+        last_name: "Doe",
+        email: "john@example.com",
+        password: "securePassword",
+      },
+    };
+    res = {
+      status: jest.fn(() => res),
+      send: jest.fn(() => res),
+      json: jest.fn(() => res),
+    };
   });
 
   beforeEach(() => {
     testUser = generateRandomUser();
+    req.body = testUser;
   });
 
   it("should connect to the database", () => {
     expect(mongoose.connection.readyState).toBe(1);
   });
 
-  it("should create User to DB", async () => {
-    const spy = jest.spyOn(User, "create");
-    const newUser = await createUser(testUser);
+  it("Should create User", async () => {
+    const registerMock = jest.spyOn(authController, "registerUser");
+    const userResponse = await authController.registerUser(req, res);
 
-    expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(testUser);
+    expect(registerMock).toHaveBeenCalled();
+    expect(authController.registerUser).toHaveBeenCalledWith(req, res);
+    expect(registerMock).toHaveBeenCalledWith(req, res);
 
-    // user model called
-    // expect(newUser).toBeDefined();
-    // expect(newUser.first_name).toEqual(testUser.first_name);
-
-    // const user = await User.findOne({ email: testUser.email });
-    // expect(user).toBeTruthy();
-
-    // const hashedPassword = await bcrypt.hash(user.password, 10);
-    // const passwordMatch = await bcrypt.compare(
-    //   testUser.password,
-    //   hashedPassword
-    // );
-    // expect(passwordMatch).toBe(true);
+    expect(userResponse).toBeDefined();
+    expect(userResponse.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        token: expect.any(String),
+        first_name: req.body.first_name,
+      })
+    );
   });
 
-  it.only("should not create user and throw error", async () => {
-    const spy = jest.spyOn(User, "create");
-    const consoleSpy = jest.spyOn(global.console, "log");
-    const newUser = await createUser(null);
-
-    expect(spy).toHaveBeenCalled();
-    expect(newUser).toThrow();
-
-    // expect(consoleSpy).toHaveBeenCalled();
-    // expect(consoleSpy).toHaveBeenCalledWith("Error Occured");
-
-    // user model called
-    // expect(newUser).toBeDefined();
-    // expect(newUser.first_name).toEqual(testUser.first_name);
-
-    // const user = await User.findOne({ email: testUser.email });
-    // expect(user).toBeTruthy();
-
-    // const hashedPassword = await bcrypt.hash(user.password, 10);
-    // const passwordMatch = await bcrypt.compare(
-    //   testUser.password,
-    //   hashedPassword
-    // );
-    // expect(passwordMatch).toBe(true);
-  });
-
-  it("should return a 400 error if input is incomplete", async () => {
-    const incompleteData = {
-      first_name: testUser.first_name,
-      email: testUser.email,
+  it("should not create user, get 400 for missing fields", async () => {
+    const registerMock = jest.spyOn(authController, "registerUser");
+    const { email, ...rest } = req.body;
+    user_with_missing_field = {
+      body: {
+        ...rest,
+      },
     };
+    const userResponse = await authController.registerUser(
+      user_with_missing_field,
+      res
+    );
+    expect(registerMock).toHaveBeenCalled();
+    expect(authController.registerUser).toHaveBeenCalledWith(
+      user_with_missing_field,
+      res
+    );
+    expect(registerMock).toHaveBeenCalledWith(user_with_missing_field, res);
 
-    const response = await request(app)
-      .post("/register")
-      .send(incompleteData)
-      .expect(400);
-
-    expect(response.text).toBe("All input is required");
+    expect(userResponse.status).toHaveBeenCalledWith(400);
+    expect(userResponse.send).toHaveBeenCalledWith("All input is required");
   });
+  it("should not create user, return 409 for duplicate entry", async () => {
+    const registerMock = jest.spyOn(authController, "registerUser");
 
-  it("should return a 409 error if the user already exist", async () => {
-    const existingUser = await createUser(testUser);
+    const existingUserResponse = await authController.registerUser(req, res);
+    const duplicateUserResponse = await authController.registerUser(req, res);
+    expect(registerMock).toHaveBeenCalled();
+    expect(authController.registerUser).toHaveBeenCalledWith(req, res);
+    expect(registerMock).toHaveBeenCalledWith(req, res);
 
-    const userData = testUser;
+    expect(existingUserResponse).toBeDefined();
+    expect(existingUserResponse.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        token: expect.any(String),
+        first_name: req.body.first_name,
+      })
+    );
 
-    const response = await request(app)
-      .post("/register")
-      .send(userData)
-      .expect(409);
-
-    expect(response.text).toBe("User Already Exist. Please Login");
+    expect(duplicateUserResponse.status).toHaveBeenCalledWith(409);
+    expect(duplicateUserResponse.send).toHaveBeenCalledWith(
+      "User Already Exist. Please Login"
+    );
   });
 });

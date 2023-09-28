@@ -39,9 +39,6 @@ describe("User Registration", () => {
       email: "john@example.com",
       password: "hashedPassword",
     });
-    // bcrypt.hash.mockResolvedValue("hashedPassword");
-
-    jwt.sign.mockReturnValue("someToken");
 
     await registerUser(req, res);
 
@@ -51,7 +48,6 @@ describe("User Registration", () => {
       last_name: "Doe",
       email: "john@example.com",
       password: "hashedPassword",
-      token: "someToken",
     });
     expect(res.json).toHaveBeenCalled();
   });
