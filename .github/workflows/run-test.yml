@@ -10,7 +10,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      MONGO_URI: ${{ secrets.MONGO_URI }} # Use the name of your secret
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+      TOKEN_KEY: ${{ secrets.TOKEN_KEY }}
 
     steps:
       - name: Checkout Repository
