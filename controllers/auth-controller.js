@@ -64,6 +64,7 @@ async function loginUser(req, res) {
   } catch (err) {
     console.log("login error ");
     console.log(err);
+    return res.status(500).send("Internal Server Error");
   }
 }
 
