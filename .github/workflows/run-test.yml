@@ -1,11 +1,24 @@
-name: Run All the Test
-on: [push]
+name: Run Jest Tests
+
+on:
+  push:
+    branches:
+      - main
+
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v2
-      - name: Install modules
-        run: npm i
-      - name: Run tests
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Jest Tests
         run: npm test
