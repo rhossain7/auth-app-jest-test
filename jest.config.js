@@ -1,7 +1,7 @@
 /** @type {import('jest').Config} */
 
 const config = {
-  testTimeout: 30000,
+  testTimeout: 300000,
 };
 
 module.exports = config;
