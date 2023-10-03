@@ -26,6 +26,10 @@ describe("Registration and Login API", () => {
     testUser = generateRandomUser();
   });
 
+  afterAll(async () => {
+    await mongoose.connection.close();
+  });
+
   it("should register a new user", async () => {
     const response = await request(app).post("/register").send(testUser);
 
