@@ -3,7 +3,6 @@ const app = require("../app");
 const mongoose = require("mongoose");
 const User = require("../model/user");
 
-// Helper function to generate random user data
 const generateRandomUser = () => {
   const randomString = Math.random().toString(36).substring(7);
   return {
