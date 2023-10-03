@@ -3,7 +3,7 @@ name: Run Jest Tests
 on:
   push:
     branches:
-      - main # Adjust the branch name as needed
+      - main
 
 jobs:
   test:
@@ -20,7 +20,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: 14 # Choose your desired Node.js version
+          node-version: 14
 
       - name: Install Dependencies
         run: npm install

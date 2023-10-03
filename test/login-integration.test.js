@@ -44,6 +44,10 @@ describe("Registration Function from Controller", () => {
     };
   });
 
+  afterAll(async () => {
+    await mongoose.connection.close();
+  });
+
   beforeEach(async () => {
     testUser = generateRandomUser();
     req.body = testUser;
